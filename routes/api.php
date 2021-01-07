@@ -16,3 +16,10 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('package', 'TransactionController@index');
+Route::get('package/{id}', 'TransactionController@show');  
+Route::post('package', 'TransactionController@store'); 
+Route::put('package/{id}', 'TransactionController@edit');
+Route::patch('package/{id}', 'TransactionController@update');
+Route::delete('package/{id}', 'TransactionController@delete');
