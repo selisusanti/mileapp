@@ -55,10 +55,10 @@ class TransactionController extends Controller
         //transaksi_order
         $validator = Validator::make($request->all(), 
         [
-            'origin_data'                   => 'required|integer',
-            'destination_data'              => 'required|integer',
+            'origin_data'                   => 'required|integer|exists:customer,id',
+            'destination_data'              => 'required|integer|exists:customer,id',
             'koli_id_array'                 => 'required|array',
-            'customer_id'                   => 'required|integer',
+            'customer_id'                   => 'required|integer|exists:customer,id',
             'transaction_amount'            => 'required|integer',
             'transaction_discount'          => 'required|integer',
             'transaction_additional_field'  => 'string|nullable',
@@ -85,39 +85,44 @@ class TransactionController extends Controller
             'connote_service' => 'string|required',
         ]);
 
-        if ($validator->fails()) {
-            $response = array('response' => '', 'success'=>false);
-            $response['response'] = $validator->messages();
+        if ($validator->fails()) 
+        {
+            $response               = array('response' => '', 'success'=>false);
+            $response['response']   = $validator->messages();
             return $response;
         }
-        $connote_total_package   =count($request->koli_id_array);
-        $jum  = Transaction::orderBy("transaction.id", "desc")->first();
-        $origin_detail  = Customer::where("id", $request->origin_data)->first();
-        $code_origin    = $origin_detail['code'];
-        $destination_detail     = Customer::where("id", $request->destination_data)->first();
-        $code_destination       = $destination_detail['code'];
-        $detail_customer        = Customer::where("id", $request->customer_id)->first();
 
-        if($jum){
+
+        $connote_total_package      = count($request->koli_id_array);
+        $jum                        = Transaction::orderBy("transaction.id", "desc")->first();
+        $origin_detail              = Customer::where("id", $request->origin_data)->first();
+        $code_origin                = $origin_detail['code'];
+        $destination_detail         = Customer::where("id", $request->destination_data)->first();
+        $code_destination           = $destination_detail['code'];
+        $detail_customer            = Customer::where("id", $request->customer_id)->first();
+
+        if($jum)
+        {
             $transaction_order = $jum['transaction_order'] + 1;
         }else{
             $transaction_order = 1;
         }
-        $ldate = date('Ymd');
+
+        $ldate              = date('Ymd');
         $transaction_code   = $code_origin.$ldate.$transaction_order;
         $permitted_chars    = '0123456789abcdefghijklmnopqrstuvwxyz';
         $location_id        = substr(str_shuffle($permitted_chars), 0, 24);
+        $connot_num         = connote::orderBy("connote.id", "desc")->first();
 
-
-        $connot_num  = connote::orderBy("connote.id", "desc")->first();
-        if($connot_num){
+        if($connot_num)
+        {
             $connote_number = $connot_num['connote_number'] + 1;
         }else{
             $connote_number = 1;
         }
 
-        $lddate2 = date('isdmYY');
-        $connote_code = "AWB".$lddate2; 
+        $lddate2            = date('isdmYY');
+        $connote_code       = "AWB".$lddate2; 
 
         DB::beginTransaction();
         try {
@@ -150,12 +155,12 @@ class TransactionController extends Controller
                     'transaction_id'           => "null"
             ]);
             
-            $id_connote = $connote_save['id'];
+            $id_connote         = $connote_save['id'];
 
             for($i=0; $i<$connote_total_package-1; $i++)
             {
 
-                $no = $i+1;
+                $no             = $i+1;
                 $detail_koli    = KoliMaster::where("id", $request->koli_id_array[$i])->first();
 
                 $koli           = Koli::create([
@@ -177,48 +182,51 @@ class TransactionController extends Controller
             
 
             $transaction = Transaction::create([
-                'transaction_code'            => $transaction_code,
-                'transaction_order'           => $transaction_order,
+                'transaction_code'              => $transaction_code,
+                'transaction_order'             => $transaction_order,
                 'transaction_payment_type_name' => $request->transaction_payment_type_name,
                 'customer_id'                   => $request->customer_id,
                 'transaction_additional_field'  => $request->transaction_additional_field,
                 'transaction_payment_type'      => $request->transaction_payment_type,
-                'location_id'           => $location_id,
-                'connote_id'            => $id_connote,
-                'origin_data'           => $request->origin_data,
-                'destination_data'      => $request->destination_data,
-                'custom_field'          => $request->custom_field,
+                'location_id'                   => $location_id,
+                'connote_id'                    => $id_connote,
+                'origin_data'                   => $request->origin_data,
+                'destination_data'              => $request->destination_data,
+                'custom_field'                  => $request->custom_field,
             ]);
 
             $connote_save->update([
-                'transaction_id'            => $transaction['id']
+                'transaction_id'                => $transaction['id']
             ]);
 
-            $transaction3    = Transaction::where("transaction.id", $transaction['id'])
-                                ->with(["origin_data","connote","destination_data"])->get();
+            $transaction3                       = Transaction::where("transaction.id", $transaction['id'])
+                                                    ->with(["origin_data","connote","destination_data"])->get();
             DB::commit();
             return Response::success($transaction3);   
+
         } catch (Exception $e) {
             DB::rollBack();
             throw new ApplicationException("transaction.failure_insert_transaction");
         }
+
     }
 
     public function edit(Request $request, $id)
     {
-        $transaction        = Transaction::where('id',$id)->first();
+        $transaction            = Transaction::where('id',$id)->first();
   
-        if(empty($transaction)){
+        if(empty($transaction))
+        {
             throw new ApplicationException("transaction.failure_select_transaction", ['id' =>  $id]);
         }
 
         //transaksi_order
         $validator = Validator::make($request->all(), 
         [
-            'origin_data'                   => 'required|integer',
-            'destination_data'              => 'required|integer',
+            'origin_data'                   => 'required|integer|exists:customer,id',
+            'destination_data'              => 'required|integer|exists:customer,id',
             'koli_id_array'                 => 'required|array',
-            'customer_id'                   => 'required|integer',
+            'customer_id'                   => 'required|integer|exists:customer,id',
             'transaction_amount'            => 'required|integer',
             'transaction_discount'          => 'required|integer',
             'transaction_additional_field'  => 'string|nullable',
@@ -242,7 +250,7 @@ class TransactionController extends Controller
             'connote_order'                 => 'string|nullable',
 
             'transaction_payment_type_name' => 'string|nullable',
-            'connote_service' => 'string|required',
+            'connote_service'               => 'string|required',
         ]);
 
         if ($validator->fails()) {
@@ -300,9 +308,10 @@ class TransactionController extends Controller
             for($i=0; $i<$connote_total_package-1; $i++)
             {
 
-                $no = $i+1;
-                $detail_koli    = KoliMaster::where("id", $request->koli_id_array[$i])->first();
-                $koli           = Koli::create([
+                $no                         = $i+1;
+                $detail_koli                = KoliMaster::where("id", $request->koli_id_array[$i])->first();
+                
+                $koli                       = Koli::create([
                         'koli_id'           => $detail_koli['koli_id'],
                         'koli_code'         => $connote_code.".".$no,
                         'koli_length'       => $detail_koli['koli_length'],
@@ -330,10 +339,12 @@ class TransactionController extends Controller
                 'custom_field'                  => $request->custom_field,
             ]); 
 
-            $transaction3    = Transaction::where("transaction.id", $id)
-                                ->with(["origin_data","connote","destination_data"])->get();
+            $transaction3           = Transaction::where("transaction.id", $id)
+                                        ->with(["origin_data","connote","destination_data"])->get();
+
             DB::commit();
             return Response::success($transaction3);   
+
         } catch (Exception $e) {
             DB::rollBack();
             throw new ApplicationException("transaction.failure_update_transaction");
@@ -343,35 +354,42 @@ class TransactionController extends Controller
 
     public function update(Request $request, $id)
     {
+        //transaksi_order
         $validator = Validator::make($request->all(), 
         [
-            'amount'            => 'required|integer',
-            'discount'          => 'integer',
-          
+            'origin_data'                   => 'required|integer|exists:customer,id'
         ]);
 
         if ($validator->fails()) {
-            $response = array('response' => '', 'success'=>false);
-            $response['response'] = $validator->messages();
+            $response               = array('response' => '', 'success'=>false);
+            $response['response']   = $validator->messages();
             return $response;
-        }else{
-            
-            DB::beginTransaction();
-            try {
-                $transaction = Transaction::where('id',$id)->first();
+        }
 
-                $transaction  = $transaction->update([
-                    'amount'            => $request->amount,
-                    'discount'          => $request->discount,
-                ]); 
+        $transaction             = Transaction::where("transaction.id", $id)
+                                    ->with(["origin_data","connote","destination_data"])->first();
+  
+        if(empty($transaction))
+        {
+            throw new ApplicationException("transaction.failure_select_transaction", ['id' =>  $id]);
+        }
 
-                DB::commit();
-                return Response::success($transaction);   
-            } catch (Exception $e) {
-                DB::rollBack();
-                throw new ApplicationException("transaction.failure_update_transaction", ['id' => $id]);
-            }
-        } 
+        DB::beginTransaction();
+        try {
+            //UPDATE TRANSAKSI
+            $transaction             = $transaction->update([
+                'origin_data'         => $request->origin_data,
+            ]); 
+
+            $transaction3             = Transaction::where("transaction.id", $id)
+            ->with(["origin_data","connote","destination_data"])->first();
+            DB::commit();
+            return Response::success($transaction3);
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new ApplicationException("transaction.failure_update_origin_transaction");
+        }
+
     }
 
     public function delete($id)

@@ -17,5 +17,9 @@ return [
         'code'          => 4200,
         'status_code'   => 422,
         'message'       => "Id :id not found."],
+    'failure_update_origin_transaction' => [
+        'code'          => 4200,
+        'status_code'   => 422,
+        'message'       => "Update Origin Data Failed"],
 
 ];
