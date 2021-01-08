@@ -34,18 +34,23 @@ class Transaction extends Model
     'custom_field'          ,];
 
     public function destination_data()
-	{
+	  {
 		return $this->belongsTo(\App\Models\Customer::class, 'destination_data');
     }
 
     public function origin_data()
-	{
+	  {
 		return $this->belongsTo(\App\Models\Customer::class, 'origin_data');
     }
 
     public function connote()
-	{
+	  {
 		return $this->belongsTo(\App\Models\Connote::class, 'connote_id')->with("koli");
+    }
+
+    public function payment()
+	  {
+		return $this->belongsTo(\App\Models\ConnoteState::class, 'transaction_payment_type');
     }
     
 }

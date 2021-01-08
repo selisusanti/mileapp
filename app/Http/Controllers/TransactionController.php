@@ -3,16 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Contracts\Support\Jsonable;
-use Carbon\Carbon;
 use App\Models\Transaction;
 use App\Models\Customer;
 use App\Models\Connote;
 use App\Models\Koli;
 use App\Models\KoliMaster;
-use App\Models\Location;
-use App\Service\Validate;
 use App\Service\Response;
 use App\Http\Helpers\Paginator;
 use DB;
@@ -25,9 +20,9 @@ class TransactionController extends Controller
 
     public function index(Request $request){ 
 
-        $transaction        = Transaction::with(["origin_data","connote","destination_data"])->get();
+        $transaction        = Transaction::with(["payment","origin_data","connote","destination_data"])->get();
         $page               = $request->page ? $request->page : 1 ;
-        $perPage            = $request->query('limit')?? 10;
+        $perPage            = $request->query('limit')?? 5;
         $all_transaction    = collect($transaction);
         $transaction_new    = new Paginator($all_transaction->forPage($page, $perPage), $all_transaction->count(), $perPage, $page, [
             'path' => url("api/package")
@@ -62,7 +57,7 @@ class TransactionController extends Controller
             'transaction_amount'            => 'required|integer',
             'transaction_discount'          => 'required|integer',
             'transaction_additional_field'  => 'string|nullable',
-            'transaction_payment_type'      => 'required|integer',
+            'transaction_payment_type'      => 'required|integer|exists:connote_state,id',
 
             'organization_id'               => 'required|integer',
             'transaction_cash_amount'       => 'required|integer',
@@ -230,7 +225,7 @@ class TransactionController extends Controller
             'transaction_amount'            => 'required|integer',
             'transaction_discount'          => 'required|integer',
             'transaction_additional_field'  => 'string|nullable',
-            'transaction_payment_type'      => 'required|integer',
+            'transaction_payment_type'      => 'required|integer|exists:connote_state,id',
 
             'organization_id'               => 'required|integer',
             'transaction_cash_amount'       => 'required|integer',
